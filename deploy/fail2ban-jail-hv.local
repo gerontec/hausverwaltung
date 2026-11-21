@@ -1,0 +1,15 @@
+# /etc/fail2ban/jail.d/hv.local - ban brute force against the Hausverwaltung login (http/https only)
+[hv-login]
+enabled  = true
+filter   = hv-login
+logpath  = /var/log/hausverwaltung/auth.log
+backend  = polling
+port     = http,https
+banaction = nftables-multiport
+maxretry = 5
+findtime = 10m
+bantime  = 1h
+bantime.increment = true
+bantime.factor = 2
+bantime.maxtime = 1w
+ignoreip = 127.0.0.1/8 ::1

@@ -1,0 +1,13 @@
+body { background: var(--bs-body-bg); }
+.table td, .table th { vertical-align: middle; }
+.legend-dot { display:inline-block; width:.7rem; height:.7rem; border-radius:50%; vertical-align:middle; }
+.statement { max-width: 52rem; }
+.card-header { font-weight: 500; }
+@media print {
+  @page { size: A4; margin: 15mm; }
+  body { font-size: 10pt; background: #fff !important; color: #000 !important; }
+  .card { border: 0 !important; }
+  a { color: inherit !important; text-decoration: none !important; }
+  .table { font-size: 9pt; }
+  main.container-fluid { padding: 0 !important; }
+}
