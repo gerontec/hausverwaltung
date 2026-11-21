@@ -121,6 +121,7 @@ function entities(): array {
             'reason' => ['Anlass', 'enum', READING_REASON], 'note' => ['Notiz', 'text']],
         'list' => ['meter_id', 'reading_date', 'value', 'reason', 'note'], 'filters' => ['meter_id']],
     'asset' => ['title' => 'Anlagen / Inventar', 'one' => 'Anlage', 'order' => 'building_id, category, name', 'icon' => 'bi-tools',
+        'hint' => 'Nur Wirtschaftsgüter über 800 € netto (GWG-Grenze, § 6 Abs. 2 EStG).',
         'fields' => ['building_id' => ['Haus', 'fk', 'building'], 'unit_id' => ['Einheit', 'fk', 'unit'], 'name' => ['Bezeichnung', 'text'],
             'category' => ['Kategorie', 'text'], 'manufacturer' => ['Hersteller', 'text'], 'model' => ['Modell', 'text'], 'serial_no' => ['Seriennummer', 'text'],
             'location' => ['Standort', 'text'], 'installed' => ['eingebaut', 'date'], 'warranty_until' => ['Gewährleistung bis', 'date'], 'note' => ['Notiz', 'textarea']],

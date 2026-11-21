@@ -57,7 +57,7 @@ function cell(array $r, string $k, array $f): string {
 
 page_head($def['title']); ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-  <h1 class="h3 mb-0 me-auto"><i class="bi <?= $def['icon'] ?> me-2"></i><?= h($def['title']) ?> <small class="text-body-secondary fs-6"><?= $total ?></small></h1>
+  <h1 class="h3 mb-0 me-auto"><i class="bi <?= $def['icon'] ?> me-2"></i><?= h($def['title']) ?> <small class="text-body-secondary fs-6"><?= $total ?></small><?php if (!empty($def['hint'])): ?> <small class="text-body-secondary fs-6 fw-normal ms-2"><?= h($def['hint']) ?></small><?php endif; ?></h1>
   <form class="d-flex gap-2" method="get">
     <input type="hidden" name="p" value="list"><input type="hidden" name="e" value="<?= h($e) ?>">
     <?php foreach (($def['filters'] ?? []) as $fk):
