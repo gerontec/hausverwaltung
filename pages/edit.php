@@ -25,6 +25,18 @@ if (is_post()) {
         q("INSERT INTO note_log (entity, entity_id, author, text) VALUES (?,?,?,?)", [$e, $id, current_user(), trim($_POST['text'])]);
         redirect(url('edit', ['e' => $e, 'id' => $id]) . '#notes');
     }
+    if ($act === 'share' && $id && isset(SHARE_ENTITIES[$e])) {
+        $who = trim($_POST['share_note'] ?? '');
+        $key = share_create($e, $id, $who, max(0, (int)($_POST['share_days'] ?? 90)), current_user());
+        q("INSERT INTO note_log (entity, entity_id, author, text) VALUES (?,?,?,?)", [$e, $id, current_user(), 'Freigabe-Link erstellt' . ($who ? " für $who" : '')]);
+        $_SESSION['share_new'] = ['e' => $e, 'id' => $id, 'url' => share_url($key), 'mail' => trim($_POST['share_mail'] ?? ''), 'who' => $who];
+        redirect(url('edit', ['e' => $e, 'id' => $id]) . '#share');
+    }
+    if ($act === 'share_revoke' && $id) {
+        q("UPDATE share_link SET revoked=1 WHERE id=? AND entity=? AND entity_id=?", [(int)($_POST['share_id'] ?? 0), $e, $id]);
+        flash('Freigabe-Link widerrufen.');
+        redirect(url('edit', ['e' => $e, 'id' => $id]) . '#share');
+    }
     if ($act === 'upload' && $id && !empty($_FILES['file']['name'])) {
         $files = $_FILES['file'];
         $n = is_array($files['name']) ? count($files['name']) : 1;
@@ -166,6 +178,41 @@ page_head($title); ?>
      $cur = row("SELECT l.id, " . str_replace(['company', 'last_name', 'first_name'], ['p.company', 'p.last_name', 'p.first_name'], PERSON_LABEL_SQL) . " n FROM lease l JOIN person p ON p.id=l.tenant_id WHERE l.unit_id=? AND (l.end_date IS NULL OR l.end_date>=CURDATE()) ORDER BY l.start_date DESC LIMIT 1", [$id]); ?>
   <div class="card mb-3"><div class="card-body d-flex justify-content-between"><span>Aktueller Mieter</span>
    <?= $cur ? '<a href="' . url('edit', ['e' => 'lease', 'id' => $cur['id']]) . '">' . h($cur['n']) . '</a>' : badge('leer', 'warning') ?></div></div>
+ <?php endif; ?>
+
+ <?php if (isset(SHARE_ENTITIES[$e])):
+     $new = ($_SESSION['share_new']['e'] ?? null) === $e && ($_SESSION['share_new']['id'] ?? 0) === $id ? $_SESSION['share_new'] : null;
+     unset($_SESSION['share_new']);
+     $links = rows("SELECT * FROM share_link WHERE entity=? AND entity_id=? AND revoked=0 AND (expires_at IS NULL OR expires_at>=NOW()) ORDER BY created_at DESC", [$e, $id]);
+     $vmail = (string)(val("SELECT p.email FROM maintenance_plan m JOIN person p ON p.id=m.vendor_id WHERE m.asset_id=? AND p.email IS NOT NULL ORDER BY m.next_due LIMIT 1", [$e === 'asset' ? $id : 0]) ?? ''); ?>
+ <div class="card mb-3" id="share"><div class="card-header"><i class="bi bi-share me-1"></i>Link mit Key versenden <small class="text-body-secondary">(ohne Passwort, nur lesen)</small></div>
+  <?php if ($new):
+      $subj = 'Anlage: ' . ($def['one'] . ' ' . (fk_options($e)[$id] ?? ''));
+      $body = "Guten Tag,\n\nunter folgendem Link finden Sie die Daten, Wartungshistorie und Fotos (nur lesen, kein Passwort nötig):\n\n{$new['url']}\n\nMit freundlichen Grüßen"; ?>
+   <div class="card-body border-bottom bg-success-subtle">
+    <div class="small mb-1">Neuer Link – wird nur jetzt angezeigt:</div>
+    <div class="input-group input-group-sm mb-2"><input class="form-control font-monospace" id="share-url" value="<?= h($new['url']) ?>" readonly>
+     <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('share-url').value);this.innerHTML='<i class=\'bi bi-check2\'></i>'"><i class="bi bi-clipboard"></i></button></div>
+    <a class="btn btn-sm btn-primary" href="mailto:<?= h(rawurlencode($new['mail'])) ?>?subject=<?= h(rawurlencode($subj)) ?>&amp;body=<?= h(rawurlencode($body)) ?>"><i class="bi bi-envelope"></i> per E-Mail senden</a>
+    <a class="btn btn-sm btn-outline-secondary" href="<?= h($new['url']) ?>" target="_blank"><i class="bi bi-box-arrow-up-right"></i> ansehen</a>
+   </div>
+  <?php endif; ?>
+  <?php if ($links): ?><ul class="list-group list-group-flush">
+   <?php foreach ($links as $l): ?>
+    <li class="list-group-item d-flex align-items-center gap-2 small">
+     <span class="me-auto"><?= h($l['note'] ?: 'ohne Empfänger') ?> · <?= h($l['created_by']) ?> <?= dmy($l['created_at']) ?> · <?= $l['expires_at'] ? 'bis ' . dmy($l['expires_at']) : 'unbefristet' ?> · <?= (int)$l['uses'] ?>× geöffnet</span>
+     <form method="post" class="m-0"><?= csrf_field() ?><input type="hidden" name="_action" value="share_revoke"><input type="hidden" name="share_id" value="<?= (int)$l['id'] ?>">
+      <button class="btn btn-sm btn-outline-danger py-0" onclick="return confirm('Link widerrufen?')" title="widerrufen"><i class="bi bi-x-lg"></i></button></form>
+    </li>
+   <?php endforeach; ?>
+  </ul><?php endif; ?>
+  <div class="card-body"><form method="post" class="row g-2"><?= csrf_field() ?><input type="hidden" name="_action" value="share">
+   <div class="col-md-6"><input class="form-control form-control-sm" name="share_note" placeholder="Empfänger (z. B. Firma)" required></div>
+   <div class="col-md-6"><input class="form-control form-control-sm" type="email" name="share_mail" placeholder="E-Mail (optional)" value="<?= h($vmail) ?>"></div>
+   <div class="col-md-6"><select class="form-select form-select-sm" name="share_days"><option value="7">7 Tage gültig</option><option value="30">30 Tage</option><option value="90" selected>90 Tage</option><option value="365">1 Jahr</option><option value="0">unbefristet</option></select></div>
+   <div class="col-md-6"><button class="btn btn-sm btn-outline-primary w-100"><i class="bi bi-link-45deg"></i> Link erstellen</button></div>
+  </form></div>
+ </div>
  <?php endif; ?>
 
  <div class="card mb-3" id="docs"><div class="card-header"><i class="bi bi-paperclip me-1"></i>Dokumente</div>

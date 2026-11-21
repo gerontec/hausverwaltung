@@ -12,10 +12,13 @@
 //   DELETE api.php?e=asset&id=1
 //   POST   api.php?e=asset&id=1&action=upload   multipart file[] (+ title)  -> attach documents
 //   POST   api.php?e=asset&id=1&action=note     JSON {"text": "..."}       -> add a note
+//   POST   api.php?e=asset&id=1&action=share    JSON {"note": "Firma X", "days": 90} -> read-only link with key (facility entities)
 //   GET    api.php?doc=ID                  -> download a document
 declare(strict_types=1);
 require __DIR__ . '/../lib/core.php';
 require __DIR__ . '/../lib/entities.php';
+require __DIR__ . '/../lib/config.php';
+require __DIR__ . '/../lib/share.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -157,6 +160,14 @@ try {
         if ($t === '') fail('text missing');
         q("INSERT INTO note_log (entity, entity_id, author, text) VALUES (?,?,?,?)", [$e, $id, $API_USER, $t]);
         out(['ok' => true], 201);
+    }
+    // --- share link
+    if ($method === 'POST' && $action === 'share') {
+        if (!isset(SHARE_ENTITIES[$e])) fail("entity $e cannot be shared (only " . implode(', ', array_keys(SHARE_ENTITIES)) . ')');
+        $b = body();
+        $key = share_create($e, $id, isset($b['note']) ? trim((string)$b['note']) : null, (int)($b['days'] ?? 90), $API_USER);
+        q("INSERT INTO note_log (entity, entity_id, author, text) VALUES (?,?,?,?)", [$e, $id, $API_USER, 'Freigabe-Link erstellt' . (!empty($b['note']) ? ' für ' . $b['note'] : '')]);
+        out(['url' => share_url($key), 'expires_days' => (int)($b['days'] ?? 90)], 201);
     }
     // --- update
     if ($method === 'PATCH' || $method === 'PUT') {

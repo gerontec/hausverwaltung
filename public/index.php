@@ -6,13 +6,15 @@ require __DIR__ . '/../lib/entities.php';
 require __DIR__ . '/../lib/layout.php';
 require __DIR__ . '/../lib/calc.php';
 require __DIR__ . '/../lib/bank.php';
+require __DIR__ . '/../lib/config.php';
+require __DIR__ . '/../lib/share.php';
 
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
 session_name('hvsess');
 session_start();
 
 $p = preg_replace('/[^a-z_]/', '', $_GET['p'] ?? 'dashboard');
-if ($p !== 'login') require_login();
+if ($p !== 'login' && $p !== 'share') require_login();   // share: password-free read-only link (key checked in pages/share.php)
 csrf_check();
 
 $file = __DIR__ . "/../pages/$p.php";
