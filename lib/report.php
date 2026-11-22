@@ -2,13 +2,15 @@
 // report.php - reporting helpers: allocation of acquisition costs to units, depreciation (AfA), yields
 declare(strict_types=1);
 
-/** apartments (with living area) of the property, keyed by unit id */
-function report_units(): array {
+/** apartments of the property, keyed by unit id; $withParking adds parking spaces / garages that belong to a WEG unit
+    (the planned layout; old rental accounts without WEG unit are left out to avoid counting a space twice) */
+function report_units(bool $withParking = false): array {
     $out = [];
+    $where = $withParking ? "(u.kind='apartment' OR (u.kind IN ('parking','garage') AND u.weg_unit_id IS NOT NULL))" : "u.kind='apartment'";
     foreach (rows("SELECT u.*, b.name house, w.no weg_no, w.owner_id,
                           (SELECT " . PERSON_LABEL_SQL . " FROM person WHERE id=w.owner_id) owner
                      FROM unit u LEFT JOIN building b ON b.id=u.building_id LEFT JOIN weg_unit w ON w.id=u.weg_unit_id
-                    WHERE u.kind='apartment' ORDER BY u.building_id, CAST(u.no AS UNSIGNED)") as $u) $out[(int)$u['id']] = $u;
+                    WHERE $where ORDER BY u.kind='apartment' DESC, u.building_id, u.kind='garage', CAST(u.no AS UNSIGNED), u.id") as $u) $out[(int)$u['id']] = $u;
     return $out;
 }
 
@@ -17,11 +19,11 @@ function unit_weight(array $u): float {
     return 1.0;
 }
 
-/** target units of one investment: listed unit ids, else apartments of the building, else of the property */
+/** target units of one investment: listed unit ids (any kind), else apartments of the building, else of the property */
 function investment_targets(array $inv, array $units): array {
     $ids = array_filter(array_map('intval', preg_split('/[\s,;]+/', (string)($inv['unit_ids'] ?? ''))));
     if ($ids) return array_values(array_intersect($ids, array_keys($units)));
-    return array_keys(array_filter($units, fn($u) => (int)$u['property_id'] === (int)$inv['property_id']
+    return array_keys(array_filter($units, fn($u) => $u['kind'] === 'apartment' && (int)$u['property_id'] === (int)$inv['property_id']
         && (!$inv['building_id'] || (int)$u['building_id'] === (int)$inv['building_id'])));
 }
 
@@ -82,7 +84,7 @@ function nonalloc_expenses(int $year, array $units): array {
     foreach (rows("SELECT e.* FROM expense e JOIN cost_type ct ON ct.id=e.cost_type_id
                     WHERE ct.allocatable=0 AND YEAR(e.invoice_date)=? AND e.from_reserve=0", [$year]) as $e) {
         if ($e['unit_id'] && isset($units[(int)$e['unit_id']])) { $res[(int)$e['unit_id']] = ($res[(int)$e['unit_id']] ?? 0) + (float)$e['amount']; continue; }
-        $t = array_keys(array_filter($units, fn($u) => !$e['building_id'] || (int)$u['building_id'] === (int)$e['building_id']));
+        $t = array_keys(array_filter($units, fn($u) => $u['kind'] === 'apartment' && (!$e['building_id'] || (int)$u['building_id'] === (int)$e['building_id'])));
         $W = array_sum(array_map(fn($id) => unit_weight($units[$id]), $t));
         foreach ($t as $id) $res[$id] = ($res[$id] ?? 0) + (float)$e['amount'] * unit_weight($units[$id]) / max($W, 1e-9);
     }
