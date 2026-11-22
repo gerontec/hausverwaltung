@@ -8,6 +8,7 @@ require __DIR__ . '/../lib/calc.php';
 require __DIR__ . '/../lib/bank.php';
 require __DIR__ . '/../lib/config.php';
 require __DIR__ . '/../lib/share.php';
+require __DIR__ . '/../lib/report.php';
 
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
 session_name('hvsess');

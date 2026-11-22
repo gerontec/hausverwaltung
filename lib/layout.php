@@ -7,7 +7,8 @@ const NAV = [
     'Posteingang' => [['inbox', 'Posteingang', 'bi-inbox']],
     'Objekt' => [['list&e=building', 'Häuser', 'bi-house'], ['list&e=unit', 'Einheiten', 'bi-door-open'], ['list&e=weg_unit', 'WEG-Einheiten', 'bi-diagram-3'], ['list&e=person', 'Personen', 'bi-people']],
     'Miete' => [['tenants', 'Mieterliste', 'bi-person-lines-fill'], ['list&e=lease', 'Mietverträge', 'bi-file-earmark-text'], ['soll', 'Sollstellung', 'bi-calendar-plus'], ['op', 'Offene Posten', 'bi-exclamation-circle'], ['bk', 'Betriebskosten&shy;abrechnung', 'bi-file-spreadsheet']],
-    'Finanzen' => [['bank', 'Bank', 'bi-bank'], ['list&e=expense', 'Ausgaben', 'bi-receipt'], ['list&e=expected_invoice', 'Erwartete Rechnungen', 'bi-calendar-check'], ['report', 'Einnahmen/Ausgaben', 'bi-bar-chart'], ['list&e=cost_type', 'Kostenarten', 'bi-tags'], ['list&e=bank_rule', 'Bankregeln', 'bi-funnel']],
+    'Finanzen' => [['bank', 'Bank', 'bi-bank'], ['list&e=expense', 'Ausgaben', 'bi-receipt'], ['list&e=expected_invoice', 'Erwartete Rechnungen', 'bi-calendar-check'], ['list&e=cost_type', 'Kostenarten', 'bi-tags'], ['list&e=bank_rule', 'Bankregeln', 'bi-funnel']],
+    'Reporting' => [['rendite', 'Rendite', 'bi-graph-up-arrow'], ['afa', 'AfA / Anlagevermögen', 'bi-building-down'], ['report', 'Einnahmen/Ausgaben', 'bi-bar-chart'], ['list&e=investment', 'Investitionen (AHK)', 'bi-piggy-bank']],
     'WEG' => [['weg', 'Hausgeld / Abrechnung', 'bi-calculator'], ['list&e=weg_budget', 'Wirtschaftsplan', 'bi-clipboard-data']],
     'Facility' => [['maint', 'Wartung', 'bi-calendar2-week'], ['list&e=ticket', 'Vorgänge / Schäden', 'bi-exclamation-triangle'], ['list&e=asset', 'Anlagen', 'bi-tools'], ['list&e=meter', 'Zähler', 'bi-speedometer2'], ['readings', 'Ablesung erfassen', 'bi-123']],
 ];

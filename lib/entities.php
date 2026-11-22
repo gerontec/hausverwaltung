@@ -13,6 +13,7 @@ const PRIORITY = ['low' => 'niedrig', 'normal' => 'normal', 'high' => 'hoch', 'e
 const TICKET_STATUS = ['open' => 'offen', 'in_progress' => 'in Arbeit', 'waiting' => 'wartet', 'done' => 'erledigt', 'rejected' => 'abgelehnt'];
 const BEARER = ['community' => 'Gemeinschaft', 'owner' => 'Eigentümer', 'tenant' => 'Mieter', 'insurance' => 'Versicherung', 'warranty' => 'Gewährleistung'];
 const POSTING_KIND = ['charge' => 'Soll (Forderung)', 'payment' => 'Zahlung (Ist)'];
+const INVEST_KIND = ['land' => 'Grundstück', 'purchase' => 'Kauf Gebäude', 'renovation' => 'Sanierung / Modernisierung', 'extension' => 'Ausbau / Neubau', 'other' => 'Sonstiges'];
 
 function entities(): array {
     static $E = null;
@@ -22,7 +23,7 @@ function entities(): array {
         'fields' => ['name' => ['Bezeichnung', 'text'], 'street' => ['Straße', 'text'], 'zip' => ['PLZ', 'text'], 'city' => ['Ort', 'text'],
             'parcel' => ['Flurstück', 'text'], 'land_area' => ['Grundstück m²', 'num'], 'note' => ['Notiz', 'textarea']],
         'list' => ['name', 'street', 'city', 'parcel'],
-        'children' => [['building', 'property_id'], ['weg_unit', 'property_id']]],
+        'children' => [['building', 'property_id'], ['weg_unit', 'property_id'], ['investment', 'property_id']]],
     'building' => ['title' => 'Häuser', 'one' => 'Haus', 'order' => 'name', 'icon' => 'bi-house',
         'fields' => ['property_id' => ['Liegenschaft', 'fk', 'property'], 'name' => ['Bezeichnung', 'text'], 'street' => ['Anschrift', 'text'],
             'built_year' => ['Baujahr', 'int'], 'heating' => ['Heizung', 'text'], 'note' => ['Notiz', 'textarea']],
@@ -102,6 +103,14 @@ function entities(): array {
         'fields' => ['property_id' => ['Liegenschaft', 'fk', 'property'], 'year' => ['Jahr', 'int'], 'building_id' => ['Untergemeinschaft (leer = alle)', 'fk', 'building'],
             'cost_type_id' => ['Kostenart (leer = Rücklage)', 'fk', 'cost_type'], 'amount' => ['Jahresbetrag', 'money'], 'note' => ['Notiz', 'text']],
         'list' => ['year', 'building_id', 'cost_type_id', 'amount', 'note'], 'filters' => ['year']],
+    'investment' => ['title' => 'Investitionen (AHK)', 'one' => 'Investition', 'order' => 'acquired_date, id', 'icon' => 'bi-piggy-bank',
+        'fields' => ['property_id' => ['Liegenschaft', 'fk', 'property'], 'building_id' => ['Haus (leer = ganze Liegenschaft)', 'fk', 'building'],
+            'unit_ids' => ['nur Einheiten (IDs, kommagetrennt; leer = alle Wohnungen nach Wohnfläche)', 'text'],
+            'kind' => ['Art', 'enum', INVEST_KIND], 'title' => ['Bezeichnung', 'text'], 'acquired_date' => ['Anschaffung / Fertigstellung', 'date'],
+            'amount' => ['Anschaffungs-/Herstellungskosten', 'money'], 'afa_rate' => ['AfA % p. a. (0 = keine)', 'num'],
+            'source' => ['Quelle (z. B. Bilanzkonto)', 'text'], 'note' => ['Notiz', 'textarea']],
+        'list' => ['acquired_date', 'kind', 'title', 'building_id', 'unit_ids', 'amount', 'afa_rate', 'source'],
+        'filters' => ['kind', 'building_id']],
     'bank_rule' => ['title' => 'Bankregeln', 'one' => 'Bankregel', 'order' => 'priority, pattern', 'icon' => 'bi-funnel',
         'fields' => ['pattern' => ['Suchtext (in Name/Verwendungszweck)', 'text'], 'direction' => ['Richtung', 'enum', ['any' => 'beide', 'in' => 'Eingang', 'out' => 'Ausgang']],
             'action' => ['Aktion', 'enum', ['payment' => 'Zahlung auf Mieter-/WEG-Konto', 'expense' => 'Ausgabe (Kostenart)', 'ignore' => 'ignorieren (privat / Umbuchung)']],
